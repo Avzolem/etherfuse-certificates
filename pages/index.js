@@ -7,7 +7,10 @@ export default function Index() {
             <div className="w-full">
                 <div className="mx-auto max-w-2xl py-12 text-center">
                     <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
-                        Etherfuse Certificates
+                        <span className="  bg-[#E4FF3F] bg-clip-text text-transparent xl:inline">
+                            Etherfuse{" "}
+                        </span>
+                        Certificates
                     </h1>
 
                     <div className="formcontainer my-4 w-full flex flex-col justify-center items-center ">
