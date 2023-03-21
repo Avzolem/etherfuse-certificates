@@ -16,6 +16,7 @@ const SOLANA_NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK;
 const AuthContextProvider = (props) => {
   const router = useRouter();
   const [publicKey, setPublicKey] = useState(null);
+  const [signature, setSignature] = useState(null);
   const [truncatePublicKey, setTruncatePublicKey] = useState(null);
   const [name, setName] = useState(null);
   const [email, setEmail] = useState(null);
@@ -27,10 +28,9 @@ const AuthContextProvider = (props) => {
     let _name = window.localStorage.getItem("name");
     let _email = window.localStorage.getItem("email");
 
-    if (!key) return;
-
     setPublicKey(key);
     setTruncatePublicKey(truncateWalletAddress(key));
+    setSignature(_signature);
     setName(_name);
     setEmail(_email);
   }, []);
@@ -65,8 +65,13 @@ const AuthContextProvider = (props) => {
     if (window) {
       window.localStorage.removeItem("publicKey");
       window.localStorage.removeItem("signature");
+      window.localStorage.removeItem("name");
+      window.localStorage.removeItem("email");
       setPublicKey(null);
       setTruncatePublicKey(null);
+      setSignature(null);
+      setName(null);
+      setEmail(null);
       router.reload(window?.location?.pathname);
     }
   };
@@ -77,7 +82,7 @@ const AuthContextProvider = (props) => {
       const provider = window?.phantom?.solana;
 
       const msg =
-        "To Avoid someone impersonating you, we need you to sign this message";
+        "Para evitar el fraude, por favor, firme este mensaje con su billetera Solana.";
       const encodeMessage = new TextEncoder().encode(msg);
       const signedMessage = await provider.request({
         method: "signMessage",
@@ -94,6 +99,7 @@ const AuthContextProvider = (props) => {
         truncateWalletAddress(signedMessage.publicKey.toString())
       );
       toast.success("Wallet Signed ✒️ ");
+      router.reload(window?.location?.pathname);
     } catch (error) {
       console.error("ERRROR SIGNATURE", error);
       toast.error("Something went wrong signing the message");
@@ -183,12 +189,13 @@ const AuthContextProvider = (props) => {
       value={{
         publicKey,
         truncatePublicKey,
+        signature,
         signIn,
         signOut,
         sendTransaction,
         signSignature,
-        contextName: name,
-        contextEmail: email,
+        name,
+        email,
         updateEmailAndName,
         LAMPORTS_PER_SOL,
       }}
