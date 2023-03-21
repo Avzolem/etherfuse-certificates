@@ -1,68 +1,10 @@
 import { AuthContext } from "@/components/AuthProvider";
 import { useContext } from "react";
-import { useEffect } from "react";
 import EmailStep from "./EmailStep";
 import WalletStep from "./WalletStep";
 
 const MainForm = () => {
   const { name, email } = useContext(AuthContext);
-
-  console.log("name )>", name);
-
-  // const generateCertificate = async () => {
-  //   console.log("Preparamos response", response);
-
-  //   setIsLoading(true);
-
-  //   try {
-  //     const explorerLink = await sendTransaction(price);
-  //     setSolanaExplorerLink(explorerLink);
-  //     setStatusText("Aproving your certificate 🤓... ");
-  //     setIsLoading(true);
-
-  //     try {
-  //       //Aqui anidamos el nombre
-  //       const imgname = response.data.name.replace(/\s+/g, "%20");
-  //       const name = response.data.name;
-
-  //       console.log("Nombre para certificado", name);
-
-  //       //Generamos la imagen con Cloudinary
-
-  //       setStatusText("Generating your certificate 🧾 ... ");
-
-  //       const outputCloudinary = `https://res.cloudinary.com/dyalnhdcl/image/upload/l_text:Arial_128_bold:${imgname}/v1679367000/certificates/certificado_qlsxoq.png`;
-
-  //       console.log("outputUrl =>", outputCloudinary);
-  //       setIsLoading(true);
-  //       setStatusText("You certificated is being minted 🐱‍👤... ");
-
-  //       const mintedData = {
-  //         name,
-  //         explorerLink,
-  //         imageUrl: outputCloudinary,
-  //         publicKey,
-  //       };
-
-  //       console.log("Este es el mintedData =>", mintedData);
-
-  //       const mintresponse = await axios.post("/api/mintnft", mintedData);
-  //       console.log("mintresponse =>", mintresponse);
-  //       setStatusText(
-  //         "You certificate is minted 🎉, check your phantom wallet 👻 "
-  //       );
-  //       setIsLoading(false);
-  //     } catch (error) {
-  //       console.error("error =>", error);
-  //       toast.error("Something went wrong on minting, please try again");
-  //     }
-  //   } catch (error) {
-  //     console.error("error =>", error);
-  //     toast.error(
-  //       "Something went wrong on sending transaction, please try again"
-  //     );
-  //   }
-  // };
 
   return (
     <div className="wrapper">

@@ -10,7 +10,7 @@ import {
 import { useRouter } from "next/router";
 export const AuthContext = createContext();
 import toast from "react-hot-toast";
-const treasuryPublicKey = "9gRip3aj217fmworgrSZDugFXnonDG4PxBmm4s4bu8ni";
+const treasuryPublicKey = process.env.NEXT_PUBLIC_PAYER_PUBLIC;
 const SOLANA_NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK;
 
 const AuthContextProvider = (props) => {
@@ -63,6 +63,7 @@ const AuthContextProvider = (props) => {
 
   const signOut = () => {
     if (window) {
+      const { solana } = window;
       window.localStorage.removeItem("publicKey");
       window.localStorage.removeItem("signature");
       window.localStorage.removeItem("name");
@@ -72,6 +73,7 @@ const AuthContextProvider = (props) => {
       setSignature(null);
       setName(null);
       setEmail(null);
+      solana.disconnect();
       router.reload(window?.location?.pathname);
     }
   };
@@ -106,7 +108,7 @@ const AuthContextProvider = (props) => {
     }
   };
 
-  const sendTransaction = async (price, data) => {
+  const sendTransaction = async (price) => {
     try {
       //provider
       const provider = window?.phantom?.solana;
@@ -120,15 +122,17 @@ const AuthContextProvider = (props) => {
       //keys
       const fromPubkey = new PublicKey(publicKey);
       const toPubkey = new PublicKey(treasuryPublicKey);
+      console.log("publicKey =>", publicKey);
+      console.log("treasuryPublicKey =>", treasuryPublicKey);
 
       //getbalance
       const balance = await connection.getBalance(new PublicKey(publicKey));
 
-      //check if it has enough balance
-      if (balance < LAMPORTS_PER_SOL * price) {
-        toast.error("You don't have enough balance");
-        return;
-      }
+      // //check if it has enough balance
+      // if (balance < LAMPORTS_PER_SOL * price) {
+      //   toast.error("You don't have enough balance");
+      //   return;
+      // }
 
       const transaction = new Transaction().add(
         SystemProgram.transfer({

@@ -8,7 +8,6 @@ import { useState } from "react";
 
 const baseURL = " https://hackathon.etherfuse.com/api/events/checker";
 const eventId = "63c3713740c2442abc5ae9cf";
-const price = process.env.NEXT_PUBLIC_MINTING_PRICE;
 
 const EmailStep = () => {
   const {
