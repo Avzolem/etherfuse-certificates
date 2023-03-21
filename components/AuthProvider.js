@@ -10,12 +10,13 @@ import {
 import { useRouter } from "next/router";
 export const AuthContext = createContext();
 import toast from "react-hot-toast";
-const treasuryPublicKey = "9gRip3aj217fmworgrSZDugFXnonDG4PxBmm4s4bu8ni";
+const treasuryPublicKey = process.env.NEXT_PUBLIC_PAYER_PUBLIC;
 const SOLANA_NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK;
 
 const AuthContextProvider = (props) => {
   const router = useRouter();
   const [publicKey, setPublicKey] = useState(null);
+  const [signature, setSignature] = useState(null);
   const [truncatePublicKey, setTruncatePublicKey] = useState(null);
   const [name, setName] = useState(null);
   const [email, setEmail] = useState(null);
@@ -27,10 +28,9 @@ const AuthContextProvider = (props) => {
     let _name = window.localStorage.getItem("name");
     let _email = window.localStorage.getItem("email");
 
-    if (!key) return;
-
     setPublicKey(key);
     setTruncatePublicKey(truncateWalletAddress(key));
+    setSignature(_signature);
     setName(_name);
     setEmail(_email);
   }, []);
@@ -63,10 +63,17 @@ const AuthContextProvider = (props) => {
 
   const signOut = () => {
     if (window) {
+      const { solana } = window;
       window.localStorage.removeItem("publicKey");
       window.localStorage.removeItem("signature");
+      window.localStorage.removeItem("name");
+      window.localStorage.removeItem("email");
       setPublicKey(null);
       setTruncatePublicKey(null);
+      setSignature(null);
+      setName(null);
+      setEmail(null);
+      solana.disconnect();
       router.reload(window?.location?.pathname);
     }
   };
@@ -77,7 +84,7 @@ const AuthContextProvider = (props) => {
       const provider = window?.phantom?.solana;
 
       const msg =
-        "To Avoid someone impersonating you, we need you to sign this message";
+        "Para evitar el fraude, por favor, firme este mensaje con su billetera Solana.";
       const encodeMessage = new TextEncoder().encode(msg);
       const signedMessage = await provider.request({
         method: "signMessage",
@@ -94,13 +101,14 @@ const AuthContextProvider = (props) => {
         truncateWalletAddress(signedMessage.publicKey.toString())
       );
       toast.success("Wallet Signed ✒️ ");
+      router.reload(window?.location?.pathname);
     } catch (error) {
       console.error("ERRROR SIGNATURE", error);
       toast.error("Something went wrong signing the message");
     }
   };
 
-  const sendTransaction = async (price, data) => {
+  const sendTransaction = async (price) => {
     try {
       //provider
       const provider = window?.phantom?.solana;
@@ -114,15 +122,17 @@ const AuthContextProvider = (props) => {
       //keys
       const fromPubkey = new PublicKey(publicKey);
       const toPubkey = new PublicKey(treasuryPublicKey);
+      console.log("publicKey =>", publicKey);
+      console.log("treasuryPublicKey =>", treasuryPublicKey);
 
       //getbalance
       const balance = await connection.getBalance(new PublicKey(publicKey));
 
-      //check if it has enough balance
-      if (balance < LAMPORTS_PER_SOL * price) {
-        toast.error("You don't have enough balance");
-        return;
-      }
+      // //check if it has enough balance
+      // if (balance < LAMPORTS_PER_SOL * price) {
+      //   toast.error("You don't have enough balance");
+      //   return;
+      // }
 
       const transaction = new Transaction().add(
         SystemProgram.transfer({
@@ -183,12 +193,13 @@ const AuthContextProvider = (props) => {
       value={{
         publicKey,
         truncatePublicKey,
+        signature,
         signIn,
         signOut,
         sendTransaction,
         signSignature,
-        contextName: name,
-        contextEmail: email,
+        name,
+        email,
         updateEmailAndName,
         LAMPORTS_PER_SOL,
       }}
