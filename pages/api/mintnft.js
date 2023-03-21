@@ -26,8 +26,8 @@ handler.post(async (req, res) => {
   //and start creating nft after 5 seconds.
   console.log("mint nfts before create nft", nftData);
   try {
-    await metaplexlib.createNFT(nftData);
-    res.status(200).json({ message: "mint nfts before create nft, after" });
+    const nftResponse = await metaplexlib.createNFT(nftData);
+    res.status(200).json(nftResponse);
   } catch (error) {
     console.error("error =>", error);
     res.status(500).json({ message: "probably didnt get nameString" });
