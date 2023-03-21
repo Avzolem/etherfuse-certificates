@@ -71,6 +71,7 @@ const MainForm = () => {
                 //Aqui anidamos el nombre
                 const imgname = response.data.name.replace(/\s+/g, "%20");
                 const name = response.data.name;
+                nvcm;
 
                 console.log("Nombre para certificado", name);
 
