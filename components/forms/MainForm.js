@@ -69,7 +69,8 @@ const MainForm = () => {
 
             try {
                 //Aqui anidamos el nombre
-                const name = response.data.name.replace(/\s+/g, "%20");
+                const imgname = response.data.name.replace(/\s+/g, "%20");
+                const name = response.data.name;
 
                 console.log("Nombre para certificado", name);
 
@@ -77,7 +78,7 @@ const MainForm = () => {
 
                 setStatusText("Generating your certificate 🧾 ... ");
 
-                const outputCloudinary = `https://res.cloudinary.com/dyalnhdcl/image/upload/l_text:Arial_128_bold:${name}/v1679367000/certificates/certificado_qlsxoq.png`;
+                const outputCloudinary = `https://res.cloudinary.com/dyalnhdcl/image/upload/l_text:Arial_128_bold:${imgname}/v1679367000/certificates/certificado_qlsxoq.png`;
 
                 console.log("outputUrl =>", outputCloudinary);
                 setIsLoading(true);
