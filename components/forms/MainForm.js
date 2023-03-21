@@ -8,6 +8,7 @@ import LoadingCircle from "@/components/common/LoadingCircle";
 
 const baseURL = " https://hackathon.etherfuse.com/api/events/checker";
 const eventId = "63c3713740c2442abc5ae9cf";
+const price = process.env.NEXT_PUBLIC_MINTING_PRICE;
 
 const MainForm = () => {
     const { publicKey, signIn, sendTransaction, signOut } =
@@ -43,10 +44,74 @@ const MainForm = () => {
             if (response.status === 200) {
                 toast.success("Email Verificado");
                 setIsLoading(false);
+            } else {
+                toast.error("Tu Correo no es valido 🤬");
+                setIsLoading(false);
             }
         } catch (error) {
             console.error("error =>", error);
-            toast.error("Something went wrong, please try again");
+            toast.error(
+                "Ocurrio un error inesperado, contacta a hello@etherfuse.com"
+            );
+        }
+    };
+
+    const generateCertificate = async () => {
+        console.log("Preparamos response", response);
+
+        setIsLoading(true);
+
+        try {
+            const explorerLink = await sendTransaction(price);
+            setSolanaExplorerLink(explorerLink);
+            setStatusText("Aproving your certificate 🤓... ");
+            setIsLoading(true);
+
+            try {
+                //Aqui anidamos el nombre
+                const name = response.data.name.replace(/\s+/g, "%20");
+
+                console.log("Nombre para certificado", name);
+
+                //Generamos la imagen con Cloudinary
+
+                setStatusText("Generating your certificate 🧾 ... ");
+
+                const outputCloudinary = `https://res.cloudinary.com/dyalnhdcl/image/upload/l_text:Arial_128_bold:${name}/v1679367000/certificates/certificado_qlsxoq.png`;
+
+                console.log("outputUrl =>", outputCloudinary);
+                setIsLoading(true);
+                setStatusText("You certificated is being minted 🐱‍👤... ");
+
+                const mintedData = {
+                    name,
+                    explorerLink,
+                    imageUrl: outputCloudinary,
+                    publicKey,
+                };
+
+                console.log("Este es el mintedData =>", mintedData);
+
+                const mintresponse = await axios.post(
+                    "/api/mintnft",
+                    mintedData
+                );
+                console.log("mintresponse =>", mintresponse);
+                setStatusText(
+                    "You certificate is minted 🎉, check your phantom wallet 👻 "
+                );
+                setIsLoading(false);
+            } catch (error) {
+                console.error("error =>", error);
+                toast.error(
+                    "Something went wrong on minting, please try again"
+                );
+            }
+        } catch (error) {
+            console.error("error =>", error);
+            toast.error(
+                "Something went wrong on sending transaction, please try again"
+            );
         }
     };
 
@@ -56,35 +121,66 @@ const MainForm = () => {
                 <div className="relative mx-auto max-w-xl">
                     {response ? (
                         publicKey ? (
-                            <>
-                                <p className="text-white font-bold">
-                                    Your Wallet is connected 🙌🏼
-                                </p>{" "}
-                                <p className="text-white font-bold">
-                                    {publicKey.toString()}
-                                </p>
-                                <br />
-                                <div className="sm:col-span-2">
-                                    <button
-                                        type="submit"
-                                        className="inline-flex w-full items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-emerald-500 via-indigo-500 to-purple-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                                        disabled={isLoading}
-                                        onClick={() => {}}
-                                    >
-                                        Emite tu certifiado :D
-                                    </button>
+                            isLoading ? (
+                                <div className="loadingwrapper my-8">
+                                    <p className="font-bold text-white text-lg mb-1">
+                                        {statusText}
+                                    </p>
+                                    <p className="text-red-600 font-bold mb-4 text-sm italic">
+                                        Please do not close this window or
+                                        refresh the page
+                                    </p>
+                                    <LoadingCircle color="#FFFFFF" />
                                 </div>
-                                <br />
-                                <button
-                                    className="inline-flex w-full items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-emerald-500 via-indigo-500 to-purple-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                                    onClick={() => {
-                                        signOut();
-                                    }}
-                                >
-                                    Sign Out 🚪
-                                </button>
-                            </>
+                            ) : solanaExplorerLink ? (
+                                <div className="loadingwrapper my-8 flex flex-col justify-center items-center">
+                                    <CheckCircleIcon className="h-20 w-20 text-green-500 mb-4" />
+                                    <p className="font-bold text-white text-lg mb-2 break-normal break-all">
+                                        {statusText}
+                                    </p>
+                                    <a
+                                        href={solanaExplorerLink}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="underline text-blue-600"
+                                    >
+                                        View transaction in Solana Explorer
+                                    </a>
+                                </div>
+                            ) : (
+                                <>
+                                    <p className="text-white font-bold">
+                                        Your Wallet is connected 🙌🏼
+                                    </p>{" "}
+                                    <p className="text-white font-bold">
+                                        {publicKey.toString()}
+                                    </p>
+                                    <br />
+                                    <div className="sm:col-span-2">
+                                        <button
+                                            type="submit"
+                                            className="inline-flex w-full items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-emerald-500 via-indigo-500 to-purple-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                                            disabled={isLoading}
+                                            onClick={() => {
+                                                generateCertificate();
+                                            }}
+                                        >
+                                            Emite tu certifiado :D
+                                        </button>
+                                    </div>
+                                    <br />
+                                    <button
+                                        className="inline-flex w-full items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-emerald-500 via-indigo-500 to-purple-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                                        onClick={() => {
+                                            signOut();
+                                        }}
+                                    >
+                                        Sign Out 🚪
+                                    </button>
+                                </>
+                            )
                         ) : (
+                            // Este es el useState del PublicKey, boton de conectar wallet
                             <>
                                 <div className="sm:col-span-2">
                                     <button
@@ -101,9 +197,10 @@ const MainForm = () => {
                             </>
                         )
                     ) : (
+                        // Este es el useState del response, verificar correo
                         <div>
-                            <div>
-                                <span className="text-center text-3xl text-white font-extrabold  sm:text-4xl">
+                            <div className="text-center text-3xl text-white font-extrabold  sm:text-4xl">
+                                <span>
                                     Primero que nada, verifica tu correo{" "}
                                 </span>
                             </div>

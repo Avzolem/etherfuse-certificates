@@ -10,7 +10,7 @@ import {
 import { useRouter } from "next/router";
 export const AuthContext = createContext();
 import toast from "react-hot-toast";
-const magiosPublicKey = "E8fEhxvSxRfoVCAWbtab1nsimWcaWcoaAsRp4bp8X2up";
+const treasuryPublicKey = "9gRip3aj217fmworgrSZDugFXnonDG4PxBmm4s4bu8ni";
 const SOLANA_NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK;
 
 const AuthContextProvider = (props) => {
@@ -106,7 +106,7 @@ const AuthContextProvider = (props) => {
 
             //keys
             const fromPubkey = new PublicKey(publicKey);
-            const toPubkey = new PublicKey(magiosPublicKey);
+            const toPubkey = new PublicKey(treasuryPublicKey);
 
             //getbalance
             const balance = await connection.getBalance(
