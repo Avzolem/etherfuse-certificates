@@ -1,11 +1,11 @@
 import React, { createContext, useState, useEffect } from "react";
 import {
-    Connection,
-    SystemProgram,
-    Transaction,
-    PublicKey,
-    LAMPORTS_PER_SOL,
-    clusterApiUrl,
+  Connection,
+  SystemProgram,
+  Transaction,
+  PublicKey,
+  LAMPORTS_PER_SOL,
+  clusterApiUrl,
 } from "@solana/web3.js";
 import { useRouter } from "next/router";
 export const AuthContext = createContext();
@@ -14,173 +14,188 @@ const treasuryPublicKey = "9gRip3aj217fmworgrSZDugFXnonDG4PxBmm4s4bu8ni";
 const SOLANA_NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK;
 
 const AuthContextProvider = (props) => {
-    const router = useRouter();
-    const [publicKey, setPublicKey] = useState(null);
-    const [truncatePublicKey, setTruncatePublicKey] = useState(null);
+  const router = useRouter();
+  const [publicKey, setPublicKey] = useState(null);
+  const [truncatePublicKey, setTruncatePublicKey] = useState(null);
+  const [name, setName] = useState(null);
+  const [email, setEmail] = useState(null);
 
-    //check in local storage if we already have a phantom wallet connected
-    useEffect(() => {
-        let key = window.localStorage.getItem("publicKey");
-        let _signature = window.localStorage.getItem("signature");
-        if (!key) return;
+  //check in local storage if we already have a phantom wallet connected
+  useEffect(() => {
+    let key = window.localStorage.getItem("publicKey");
+    let _signature = window.localStorage.getItem("signature");
+    let _name = window.localStorage.getItem("name");
+    let _email = window.localStorage.getItem("email");
 
-        setPublicKey(key);
-        setTruncatePublicKey(truncateWalletAddress(key));
-    }, []);
+    if (!key) return;
 
-    const signIn = async () => {
-        const provider = window?.phantom?.solana;
-        const { solana } = window;
+    setPublicKey(key);
+    setTruncatePublicKey(truncateWalletAddress(key));
+    setName(_name);
+    setEmail(_email);
+  }, []);
 
-        //If phantom wallet is not installed
-        if (!provider?.isPhantom || !solana.isPhantom) {
-            toast.error("Please install Phantom Wallet...");
-            setTimeout(() => {
-                window.open("https://phantom.app/", "_blank");
-            }, 2000);
-            return;
-        }
+  const signIn = async () => {
+    const provider = window?.phantom?.solana;
+    const { solana } = window;
 
-        //if phantom wallet is installed
-        //Asssigning the phantom provider
-        let phantom;
-        if (provider?.isPhantom) phantom = provider;
+    //If phantom wallet is not installed
+    if (!provider?.isPhantom || !solana.isPhantom) {
+      toast.error("Please install Phantom Wallet...");
+      setTimeout(() => {
+        window.open("https://phantom.app/", "_blank");
+      }, 2000);
+      return;
+    }
 
-        const { publicKey } = await phantom.connect();
-        setPublicKey(publicKey.toString());
-        toast.success("Wallet connected 👻");
-        setTruncatePublicKey(truncateWalletAddress(publicKey.toString()));
+    //if phantom wallet is installed
+    //Asssigning the phantom provider
+    let phantom;
+    if (provider?.isPhantom) phantom = provider;
 
-        await signSignature();
-    };
+    const { publicKey } = await phantom.connect();
+    setPublicKey(publicKey.toString());
+    toast.success("Wallet connected 👻");
+    setTruncatePublicKey(truncateWalletAddress(publicKey.toString()));
 
-    const signOut = () => {
-        if (window) {
-            window.localStorage.removeItem("publicKey");
-            window.localStorage.removeItem("signature");
-            setPublicKey(null);
-            setTruncatePublicKey(null);
-            router.reload(window?.location?.pathname);
-        }
-    };
+    await signSignature();
+  };
 
-    const signSignature = async () => {
-        try {
-            //provider
-            const provider = window?.phantom?.solana;
+  const signOut = () => {
+    if (window) {
+      window.localStorage.removeItem("publicKey");
+      window.localStorage.removeItem("signature");
+      setPublicKey(null);
+      setTruncatePublicKey(null);
+      router.reload(window?.location?.pathname);
+    }
+  };
 
-            const msg =
-                "To Avoid someone impersonating you, we need you to sign this message";
-            const encodeMessage = new TextEncoder().encode(msg);
-            const signedMessage = await provider.request({
-                method: "signMessage",
-                params: {
-                    message: encodeMessage,
-                    display: "UTF-8",
-                },
-            });
+  const signSignature = async () => {
+    try {
+      //provider
+      const provider = window?.phantom?.solana;
 
-            window.localStorage.setItem("publicKey", signedMessage.publicKey);
-            window.localStorage.setItem("signature", signedMessage.signature);
-            setPublicKey(signedMessage.publicKey.toString());
-            setTruncatePublicKey(
-                truncateWalletAddress(signedMessage.publicKey.toString())
-            );
-            toast.success("Wallet Signed ✒️ ");
-        } catch (error) {
-            console.error("ERRROR SIGNATURE", error);
-            toast.error("Something went wrong signing the message");
-        }
-    };
+      const msg =
+        "To Avoid someone impersonating you, we need you to sign this message";
+      const encodeMessage = new TextEncoder().encode(msg);
+      const signedMessage = await provider.request({
+        method: "signMessage",
+        params: {
+          message: encodeMessage,
+          display: "UTF-8",
+        },
+      });
 
-    const sendTransaction = async (price, data) => {
-        try {
-            //provider
-            const provider = window?.phantom?.solana;
+      window.localStorage.setItem("publicKey", signedMessage.publicKey);
+      window.localStorage.setItem("signature", signedMessage.signature);
+      setPublicKey(signedMessage.publicKey.toString());
+      setTruncatePublicKey(
+        truncateWalletAddress(signedMessage.publicKey.toString())
+      );
+      toast.success("Wallet Signed ✒️ ");
+    } catch (error) {
+      console.error("ERRROR SIGNATURE", error);
+      toast.error("Something went wrong signing the message");
+    }
+  };
 
-            //connection
-            const connection = new Connection(
-                clusterApiUrl(SOLANA_NETWORK),
-                "confirmed"
-            );
+  const sendTransaction = async (price, data) => {
+    try {
+      //provider
+      const provider = window?.phantom?.solana;
 
-            //keys
-            const fromPubkey = new PublicKey(publicKey);
-            const toPubkey = new PublicKey(treasuryPublicKey);
+      //connection
+      const connection = new Connection(
+        clusterApiUrl(SOLANA_NETWORK),
+        "confirmed"
+      );
 
-            //getbalance
-            const balance = await connection.getBalance(
-                new PublicKey(publicKey)
-            );
+      //keys
+      const fromPubkey = new PublicKey(publicKey);
+      const toPubkey = new PublicKey(treasuryPublicKey);
 
-            //check if it has enough balance
-            if (balance < LAMPORTS_PER_SOL * price) {
-                toast.error("You don't have enough balance");
-                return;
-            }
+      //getbalance
+      const balance = await connection.getBalance(new PublicKey(publicKey));
 
-            const transaction = new Transaction().add(
-                SystemProgram.transfer({
-                    fromPubkey,
-                    toPubkey,
-                    lamports: LAMPORTS_PER_SOL * price, // 1 SOL
-                })
-            );
+      //check if it has enough balance
+      if (balance < LAMPORTS_PER_SOL * price) {
+        toast.error("You don't have enough balance");
+        return;
+      }
 
-            const { blockhash } = await connection.getLatestBlockhash();
-            transaction.recentBlockhash = blockhash;
-            transaction.feePayer = fromPubkey;
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey,
+          toPubkey,
+          lamports: LAMPORTS_PER_SOL * price, // 1 SOL
+        })
+      );
 
-            //sign transaction
-            const transactionsignature = await provider.signTransaction(
-                transaction
-            );
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = fromPubkey;
 
-            //send transaction
-            const txid = await connection.sendRawTransaction(
-                transactionsignature.serialize()
-            );
-            console.info(`Transaction ${txid} sent`);
+      //sign transaction
+      const transactionsignature = await provider.signTransaction(transaction);
 
-            //wait for confirmation
-            const confirmation = await connection.confirmTransaction(txid, {
-                commitment: "singleGossip",
-            });
+      //send transaction
+      const txid = await connection.sendRawTransaction(
+        transactionsignature.serialize()
+      );
+      console.info(`Transaction ${txid} sent`);
 
-            const { slot } = confirmation.value;
+      //wait for confirmation
+      const confirmation = await connection.confirmTransaction(txid, {
+        commitment: "singleGossip",
+      });
 
-            console.info(`Transaction ${txid} confirmed in block ${slot}`);
+      const { slot } = confirmation.value;
 
-            const solanaExplorerLink = `https://explorer.solana.com/tx/${txid}?cluster=devnet`;
-            return solanaExplorerLink;
-        } catch (error) {
-            console.error("ERROR SEND TRANSACTION", error);
-            toast.error("Something went wrong sending the transaction");
-        }
-    };
+      console.info(`Transaction ${txid} confirmed in block ${slot}`);
 
-    //truncate function for public key
-    const truncateWalletAddress = (address) => {
-        let firstFour = address?.substring(0, 4);
-        let lastFour = address?.substring(address?.length - 4);
-        return firstFour + "..." + lastFour;
-    };
+      const solanaExplorerLink = `https://explorer.solana.com/tx/${txid}?cluster=devnet`;
+      return solanaExplorerLink;
+    } catch (error) {
+      console.error("ERROR SEND TRANSACTION", error);
+      toast.error("Something went wrong sending the transaction");
+    }
+  };
 
-    return (
-        <AuthContext.Provider
-            value={{
-                publicKey,
-                truncatePublicKey,
-                signIn,
-                signOut,
-                sendTransaction,
-                signSignature,
-                LAMPORTS_PER_SOL,
-            }}
-        >
-            {props.children}
-        </AuthContext.Provider>
-    );
+  //truncate function for public key
+  const truncateWalletAddress = (address) => {
+    let firstFour = address?.substring(0, 4);
+    let lastFour = address?.substring(address?.length - 4);
+    return firstFour + "..." + lastFour;
+  };
+
+  const updateEmailAndName = (name, email) => {
+    if (window) {
+      window.localStorage.setItem("email", email);
+      window.localStorage.setItem("name", name);
+      setEmail(email);
+      setName(name);
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        publicKey,
+        truncatePublicKey,
+        signIn,
+        signOut,
+        sendTransaction,
+        signSignature,
+        contextName: name,
+        contextEmail: email,
+        updateEmailAndName,
+        LAMPORTS_PER_SOL,
+      }}
+    >
+      {props.children}
+    </AuthContext.Provider>
+  );
 };
 
 export default AuthContextProvider;
