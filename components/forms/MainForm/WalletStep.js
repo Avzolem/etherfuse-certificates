@@ -37,7 +37,7 @@ const WalletStep = () => {
             },
         });
         //console.log("Upload URL to IPS: ", ipfsUrl);
-        return uploadUrl;
+        return uploadUrl[0];
     };
 
     const generateCertificate = async () => {
@@ -48,6 +48,10 @@ const WalletStep = () => {
         try {
             setStatusText("Por favor confirma la transacción en tu wallet 👻 ");
             const explorerLink = await sendTransaction(price);
+
+            setStatusText(
+                "Transacción confirmada, generando el certificado 📃 "
+            );
 
             const imgname = name.replace(/\s+/g, "%20");
 
