@@ -6,6 +6,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const price = process.env.NEXT_PUBLIC_MINTING_PRICE;
+const SOLANA_NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK;
 
 const WalletStep = () => {
   const {
@@ -21,85 +22,80 @@ const WalletStep = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
-  const [solanaExplorerLink, setSolanaExplorerLink] = useState(null);
+  const [solanaExplorerLink, setSolanaExplorerLink] = useState("");
 
   const generateCertificate = async () => {
     setIsLoading(true);
 
-    setStatusText("Por favor confirma la transacción en tu wallet 👻 ");
-    const explorerLink = await sendTransaction(price);
-    console.log("explorer link....", explorerLink);
-    // try {
-    //   const explorerLink = await sendTransaction(price);
-    //   setSolanaExplorerLink(explorerLink);
-    //   setStatusText(
-    //     "Llamando a los robots certificadores de hackathones 🤖..."
-    //   );
+    try {
+      setStatusText("Por favor confirma la transacción en tu wallet 👻 ");
+      const explorerLink = await sendTransaction(price);
 
-    //   try {
-    //     //Aqui anidamos el nombre
-    //     const imgname = name.replace(/\s+/g, "%20");
-    //     console.log("Nombre para certificado", name);
+      const imgname = name.replace(/\s+/g, "%20");
 
-    //     //Generamos la imagen con Cloudinary
-    //     setStatusText(
-    //       "Generando la imagen de certificado más bonita del mundo 🌏"
-    //     );
+      const mintedData = {
+        name,
+        explorerLink,
+        imageUrl: `https://res.cloudinary.com/dyalnhdcl/image/upload/l_text:Arial_128_bold:${imgname}/v1679367000/certificates/certificado_qlsxoq.png`,
+        publicKey,
+      };
 
-    //     const outputCloudinary = `https://res.cloudinary.com/dyalnhdcl/image/upload/l_text:Arial_128_bold:${imgname}/v1679367000/certificates/certificado_qlsxoq.png`;
-    //     console.log("outputUrl =>", outputCloudinary);
-    //     setIsLoading(true);
+      setStatusText("Emitiendo tu certificado en la blockchain de Solana 🚀");
 
-    //     const mintedData = {
-    //       name,
-    //       explorerLink,
-    //       imageUrl: outputCloudinary,
-    //       publicKey,
-    //     };
+      const { data } = await axios.post("/api/mintnft", mintedData);
+      const { signature: newSignature } = data;
 
-    //     console.log("Preparando información para  =>", mintedData);
+      const solanaExplorerUrl = `https://solscan.io/tx/${newSignature}?cluster=${SOLANA_NETWORK}`;
+      setSolanaExplorerLink(solanaExplorerUrl);
 
-    //     //Generamos la imagen con Cloudinary
-    //     setStatusText("Emitiendo tu certificado en la blockchain de Solana 🚀");
+      setStatusText(
+        "¡Listo! Tu certificado ha sido emitido, revisa tu Phantom Wallet 👻"
+      );
+    } catch (error) {
+      console.error("Error al generar el certificado", error);
+      toast.error(
+        "Ocurrió un error al generar el certificado, intenta de nuevo 😢"
+      );
+    }
 
-    //     const mintresponse = await axios.post("/api/mintnft", mintedData);
-    //     console.log("mintresponse =>", mintresponse);
-    //     setStatusText(
-    //       "¡Listo! Tu certificado ha sido emitido, revisa tu Phantom Wallet"
-    //     );
-    //   } catch (error) {
-    //     console.error("error =>", error);
-    //     toast.error(
-    //       "Ocurrió un error al generar el certificado, intenta de nuevo 😢"
-    //     );
-    //     setStatusText("");
-    //     setIsLoading(false);
-    //   }
-    // } catch (error) {
-    //   console.error("error =>", error);
-    //   toast.error(
-    //     "Ocurrió un error al generar el certificado, intenta de nuevo 😢"
-    //   );
-    //   setStatusText("");
-    //   setIsLoading(false);
-    // }
     setStatusText("");
     setIsLoading(false);
   };
 
   return (
     <div className="sm:col-span-2">
-      {signature && publicKey ? (
+      {publicKey ? (
         <>
           {!isLoading && (
             <>
-              <p className="text-white font-bold">Hey {name}! </p>{" "}
-              <p className="text-white font-bold">
-                Tu Wallet está conectada 🙌🏼
-              </p>{" "}
-              <p className="text-white font-bold">
-                {truncatePublicKey.toString()}
-              </p>
+              {solanaExplorerLink ? (
+                <div className="successcontainer">
+                  <p className="text-white font-bold">Hey {name}! </p>{" "}
+                  <p className="text-white font-bold">
+                    Tu certificado ha sido emitido 🎉{" "}
+                  </p>{" "}
+                  <p className="text-white font-bold my-2">
+                    Revisa la transacción en{" "}
+                    <a
+                      href={solanaExplorerLink}
+                      target="_blank"
+                      className="text-red-600 underline"
+                    >
+                      Solana Explorer
+                    </a>
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-white font-bold">Hey {name}! </p>{" "}
+                  <p className="text-white font-bold">
+                    Tu Wallet está conectada 🙌🏼
+                  </p>{" "}
+                  <p className="text-white font-bold">
+                    {truncatePublicKey.toString()}
+                  </p>
+                </>
+              )}
             </>
           )}
 
@@ -118,7 +114,8 @@ const WalletStep = () => {
               </div>
             </div>
           )}
-          {!isLoading && (
+
+          {!isLoading && !solanaExplorerLink && (
             <div className="sm:col-span-2">
               <button
                 type="submit"

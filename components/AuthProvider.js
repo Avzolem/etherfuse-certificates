@@ -57,8 +57,7 @@ const AuthContextProvider = (props) => {
     setPublicKey(publicKey.toString());
     toast.success("Wallet connected 👻");
     setTruncatePublicKey(truncateWalletAddress(publicKey.toString()));
-
-    await signSignature();
+    window.localStorage.setItem("publicKey", publicKey.toString());
   };
 
   const signOut = () => {
@@ -94,14 +93,7 @@ const AuthContextProvider = (props) => {
         },
       });
 
-      window.localStorage.setItem("publicKey", signedMessage.publicKey);
       window.localStorage.setItem("signature", signedMessage.signature);
-      setPublicKey(signedMessage.publicKey.toString());
-      setTruncatePublicKey(
-        truncateWalletAddress(signedMessage.publicKey.toString())
-      );
-      toast.success("Wallet Signed ✒️ ");
-      router.reload(window?.location?.pathname);
     } catch (error) {
       console.error("ERRROR SIGNATURE", error);
       toast.error("Something went wrong signing the message");
@@ -113,6 +105,8 @@ const AuthContextProvider = (props) => {
       //provider
       const provider = window?.phantom?.solana;
 
+      await signSignature();
+
       //connection
       const connection = new Connection(
         clusterApiUrl(SOLANA_NETWORK),
@@ -122,11 +116,9 @@ const AuthContextProvider = (props) => {
       //keys
       const fromPubkey = new PublicKey(publicKey);
       const toPubkey = new PublicKey(treasuryPublicKey);
-      console.log("publicKey =>", publicKey);
-      console.log("treasuryPublicKey =>", treasuryPublicKey);
 
       //getbalance
-      const balance = await connection.getBalance(new PublicKey(publicKey));
+      // const balance = await connection.getBalance(new PublicKey(publicKey));
 
       // //check if it has enough balance
       // if (balance < LAMPORTS_PER_SOL * price) {
@@ -168,7 +160,7 @@ const AuthContextProvider = (props) => {
       return solanaExplorerLink;
     } catch (error) {
       console.error("ERROR SEND TRANSACTION", error);
-      toast.error("Something went wrong sending the transaction");
+      throw new Error("Something went wrong sending the transaction");
     }
   };
 
