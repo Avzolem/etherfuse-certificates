@@ -55,7 +55,7 @@ const WalletStep = () => {
 
             const imgname = name.replace(/\s+/g, "%20");
 
-            const cloudinaryURL = `https://res.cloudinary.com/dyalnhdcl/image/upload/l_text:Arial_128_bold:${imgname}/v1679367000/certificates/certificado_qlsxoq.png`;
+            const cloudinaryURL = `https://res.cloudinary.com/da2ckztvt/image/upload/co_rgb:E4FF3F,l_text:montserrat_46:${imgname},y_-350/v1680075549/certificates/ethersufe-certificate_mlzngk.png`;
 
             console.log("URL de Cloudinary", cloudinaryURL);
 
