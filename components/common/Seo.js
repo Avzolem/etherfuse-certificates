@@ -2,9 +2,10 @@ import { NextSeo } from "next-seo";
 
 //EDIT ME PLEASE
 const data = {
-    siteName: "EzTicket.com",
-    title: "EzTicket",
-    description: "Get EzTickets for your favorite events",
+    siteName: "avsolem.com",
+    title: "Etherfuse Hackathon",
+    description:
+        "Get a certificate for participating in the Etherfuse Hackathon",
     url: "https://avsolem.com",
     imageUrl: "/og.png",
     twitter: "@avsolem",
