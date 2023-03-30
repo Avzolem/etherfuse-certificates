@@ -8,236 +8,237 @@ import { useStorageUpload } from "@thirdweb-dev/react";
 
 const price = process.env.NEXT_PUBLIC_MINTING_PRICE;
 const SOLANA_NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK;
-const baseURL =
-    "https://b174-2806-2f0-3460-1672-acfc-1dbc-ffb6-40db.ngrok.io/api/events/checker";
+const baseURL = "https://hackathon.etherfuse.com/api/events/checker";
 const eventId = "63c3713740c2442abc5ae9cf";
 
 const WalletStep = () => {
-    const {
-        signIn,
-        signOut,
-        name,
-        email,
-        signature,
-        publicKey,
-        truncatePublicKey,
-        sendTransaction,
-    } = useContext(AuthContext);
+  const {
+    signIn,
+    signOut,
+    name,
+    email,
+    signature,
+    publicKey,
+    truncatePublicKey,
+    sendTransaction,
+  } = useContext(AuthContext);
 
-    const [isLoading, setIsLoading] = useState(false);
-    const [statusText, setStatusText] = useState("");
-    const [solanaExplorerLink, setSolanaExplorerLink] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [statusText, setStatusText] = useState("");
+  const [solanaExplorerLink, setSolanaExplorerLink] = useState("");
+  const [uploadUrl, setUploadUrl] = useState(
+    "https://gateway.ipfscdn.io/ipfs/QmUBzX4KwQgHY9E7Ci3ViA2NqJWnfAvgAEqEru54RWeyiQ"
+  );
 
-    const { mutateAsync: upload } = useStorageUpload();
+  const { mutateAsync: upload } = useStorageUpload();
 
-    const uploadToIpfs = async (file) => {
-        console.log("Este es el file", file);
-        const uploadUrl = await upload({
-            data: [file],
-            options: {
-                uploadWithGatewayUrl: true,
-                uploadWithoutDirectory: true,
-            },
+  const uploadToIpfs = async (file) => {
+    console.log("Este es el file", file);
+    const uploadUrl = await upload({
+      data: [file],
+      options: {
+        uploadWithGatewayUrl: true,
+        uploadWithoutDirectory: true,
+      },
+    });
+    //console.log("Upload URL to IPS: ", ipfsUrl);
+    return uploadUrl[0];
+  };
+
+  const generateCertificate = async () => {
+    setIsLoading(true);
+
+    let file = null;
+
+    try {
+      setStatusText("Por favor confirma la transacción en tu wallet 👻 ");
+      const explorerLink = await sendTransaction(price);
+
+      setStatusText("Transacción confirmada, generando el certificado 📃 ");
+
+      const imgname = name.replace(/\s+/g, "%20");
+
+      const cloudinaryURL = `https://res.cloudinary.com/da2ckztvt/image/upload/co_rgb:E4FF3F,l_text:montserrat_46:${imgname},y_-350/v1680075549/certificates/ethersufe-certificate_mlzngk.png`;
+
+      console.log("URL de Cloudinary", cloudinaryURL);
+
+      await fetch(cloudinaryURL)
+        .then((res) => res.blob())
+        .then((myBlob) => {
+          console.log("Creando el Blob", myBlob);
+          // logs: Blob { size: 1024, type: "image/jpeg" }
+
+          myBlob.name = "certificado.png";
+
+          file = new File([myBlob], "image.png", {
+            type: myBlob.type,
+          });
+
+          console.log("Aqui ya se creo el archivo temporal", file);
         });
-        //console.log("Upload URL to IPS: ", ipfsUrl);
-        return uploadUrl[0];
-    };
 
-    const generateCertificate = async () => {
-        setIsLoading(true);
+      const uploadUrl = await uploadToIpfs(file);
+      console.log("Upload URL to IPS: ", uploadUrl);
 
-        let file = null;
+      const mintedData = {
+        name,
+        explorerLink,
+        imageUrl: uploadUrl,
+        publicKey,
+      };
 
-        try {
-            setStatusText("Por favor confirma la transacción en tu wallet 👻 ");
-            const explorerLink = await sendTransaction(price);
+      setStatusText("Emitiendo tu certificado en la blockchain de Solana 🚀");
 
-            setStatusText(
-                "Transacción confirmada, generando el certificado 📃 "
-            );
+      const { data } = await axios.post("/api/mintnft", mintedData);
+      const { signature: newSignature } = data;
 
-            const imgname = name.replace(/\s+/g, "%20");
+      const solanaExplorerUrl = `https://solscan.io/tx/${newSignature}?cluster=${SOLANA_NETWORK}`;
 
-            const cloudinaryURL = `https://res.cloudinary.com/da2ckztvt/image/upload/co_rgb:E4FF3F,l_text:montserrat_46:${imgname},y_-350/v1680075549/certificates/ethersufe-certificate_mlzngk.png`;
+      const dataToSend = {
+        email,
+        eventId,
+      };
 
-            console.log("URL de Cloudinary", cloudinaryURL);
+      setUploadUrl(uploadUrl);
 
-            await fetch(cloudinaryURL)
-                .then((res) => res.blob())
-                .then((myBlob) => {
-                    console.log("Creando el Blob", myBlob);
-                    // logs: Blob { size: 1024, type: "image/jpeg" }
+      try {
+        const { data: ticketUpdated } = await axios.put(baseURL, dataToSend);
+        console.log("Ticket updated", ticketUpdated);
+      } catch (error) {
+        console.error("Error al actualizar el certificado", error);
+      }
 
-                    myBlob.name = "certificado.png";
+      setSolanaExplorerLink(solanaExplorerUrl);
 
-                    file = new File([myBlob], "image.png", {
-                        type: myBlob.type,
-                    });
+      setStatusText(
+        "¡Listo! Tu certificado ha sido emitido, revisa tu Phantom Wallet 👻"
+      );
+    } catch (error) {
+      console.error("Error al generar el certificado", error);
+      toast.error(
+        "Ocurrió un error al generar el certificado, intenta de nuevo 😢"
+      );
+    }
 
-                    console.log("Aqui ya se creo el archivo temporal", file);
-                });
+    setStatusText("");
+    setIsLoading(false);
+  };
 
-            const uploadUrl = await uploadToIpfs(file);
-            console.log("Upload URL to IPS: ", uploadUrl);
-
-            const mintedData = {
-                name,
-                explorerLink,
-                imageUrl: uploadUrl,
-                publicKey,
-            };
-
-            setStatusText(
-                "Emitiendo tu certificado en la blockchain de Solana 🚀"
-            );
-
-            const { data } = await axios.post("/api/mintnft", mintedData);
-            const { signature: newSignature } = data;
-
-            const solanaExplorerUrl = `https://solscan.io/tx/${newSignature}?cluster=${SOLANA_NETWORK}`;
-
-            const dataToSend = {
-                email,
-                eventId,
-            };
-
-            try {
-                const { data: ticketUpdated } = await axios.put(
-                    baseURL,
-                    dataToSend
-                );
-
-                console.log("Ticket updated", ticketUpdated);
-            } catch (error) {
-                console.error("Error al actualizar el certificado", error);
-            }
-
-            setSolanaExplorerLink(solanaExplorerUrl);
-
-            setStatusText(
-                "¡Listo! Tu certificado ha sido emitido, revisa tu Phantom Wallet 👻"
-            );
-        } catch (error) {
-            console.error("Error al generar el certificado", error);
-            toast.error(
-                "Ocurrió un error al generar el certificado, intenta de nuevo 😢"
-            );
-        }
-
-        setStatusText("");
-        setIsLoading(false);
-    };
-
-    return (
-        <div className="sm:col-span-2">
-            {publicKey ? (
-                <>
-                    {!isLoading && (
-                        <>
-                            {solanaExplorerLink ? (
-                                <div className="successcontainer">
-                                    <p className="text-white font-bold">
-                                        Hey {name}!{" "}
-                                    </p>{" "}
-                                    <p className="text-white font-bold">
-                                        Tu certificado ha sido emitido 🎉{" "}
-                                    </p>{" "}
-                                    <p className="text-white font-bold my-2">
-                                        Revisa la transacción en{" "}
-                                        <a
-                                            href={solanaExplorerLink}
-                                            target="_blank"
-                                            className="text-red-600 underline"
-                                        >
-                                            Solana Explorer
-                                        </a>
-                                    </p>
-                                </div>
-                            ) : (
-                                <>
-                                    <p className="text-white font-bold">
-                                        Hey {name}!{" "}
-                                    </p>{" "}
-                                    <p className="text-white font-bold">
-                                        Tu Wallet está conectada 🙌🏼
-                                    </p>{" "}
-                                    <p className="text-white font-bold">
-                                        {truncatePublicKey.toString()}
-                                    </p>
-                                </>
-                            )}
-                        </>
-                    )}
-
-                    <br />
-                    {isLoading && statusText && (
-                        <div className="wrapersin flex flex-col items-center justify-center">
-                            <div className="loading flex">
-                                <LoadingCircle className="m-0 p-0" />
-                            </div>
-                            <div className="statustextcontainer mt-4">
-                                <p className="text-white font-bold mb-8">
-                                    {statusText}
-                                </p>
-                                <p className="text-red-600 italic mb-8 text-sm">
-                                    ⚠️ Por favor no cierres esta ventana hasta
-                                    que se complete el proceso
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {!isLoading && !solanaExplorerLink && (
-                        <div className="sm:col-span-2">
-                            <button
-                                type="submit"
-                                className="inline-flex w-full items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-emerald-500 via-indigo-500 to-purple-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                                disabled={isLoading}
-                                onClick={() => {
-                                    generateCertificate();
-                                }}
-                            >
-                                Canjear certificado 🏅
-                            </button>
-                        </div>
-                    )}
-                    <br />
-                    {!isLoading && (
-                        <button
-                            className="inline-flex w-full items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-emerald-500 via-indigo-500 to-purple-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                            onClick={() => {
-                                signOut();
-                            }}
-                        >
-                            Sign Out 🚪
-                        </button>
-                    )}
-                </>
-            ) : (
-                <>
-                    <div className="labellegend">
-                        <p className="text-white mb-4 uppercase font-bold">
-                            Hola {name} 👋🏼
-                        </p>
-                        <p className="text-white italic text-sm mb-4">
-                            Por favor conecta tu wallet en el botón de abajo
-                            para canjear tu certificado
-                        </p>
-                    </div>
-                    <button
-                        type="submit"
-                        className="inline-flex w-full items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-emerald-500 via-indigo-500 to-purple-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                        disabled={isLoading}
-                        onClick={() => {
-                            signIn();
-                        }}
+  return (
+    <div className="sm:col-span-2">
+      {publicKey ? (
+        <>
+          {!isLoading && (
+            <>
+              {solanaExplorerLink ? (
+                <div className="successcontainer">
+                  {uploadUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={uploadUrl}
+                      alt="Certificado"
+                      className="w-full h-full mb-4"
+                    />
+                  )}
+                  <p className="text-white font-bold">Hey {name}! </p>{" "}
+                  <p className="text-white font-bold">
+                    Tu certificado ha sido emitido 🎉{" "}
+                  </p>{" "}
+                  <p className="text-white font-bold text-sm">
+                    Revisa tu phantom wallet 👻{" "}
+                  </p>{" "}
+                  <p className="text-white font-bold my-2">
+                    Revisa la transacción en{" "}
+                    <a
+                      href={solanaExplorerLink}
+                      target="_blank"
+                      className="text-red-600 underline"
                     >
-                        Conecta tu wallet 👻
-                    </button>
+                      Solana Explorer
+                    </a>
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-white font-bold">Hey {name}! </p>{" "}
+                  <p className="text-white font-bold">
+                    Tu Wallet está conectada 🙌🏼
+                  </p>{" "}
+                  <p className="text-white font-bold">
+                    {truncatePublicKey.toString()}
+                  </p>
                 </>
-            )}
-        </div>
-    );
+              )}
+            </>
+          )}
+
+          <br />
+          {isLoading && statusText && (
+            <div className="wrapersin flex flex-col items-center justify-center">
+              <div className="loading flex">
+                <LoadingCircle className="m-0 p-0" />
+              </div>
+              <div className="statustextcontainer mt-4">
+                <p className="text-white font-bold mb-8">{statusText}</p>
+                <p className="text-red-600 italic mb-8 text-sm">
+                  ⚠️ Por favor no cierres esta ventana hasta que se complete el
+                  proceso
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!isLoading && !solanaExplorerLink && (
+            <div className="sm:col-span-2">
+              <button
+                type="submit"
+                className="inline-flex w-full items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-emerald-500 via-indigo-500 to-purple-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                disabled={isLoading}
+                onClick={() => {
+                  generateCertificate();
+                }}
+              >
+                Canjear certificado 🏅
+              </button>
+            </div>
+          )}
+          <br />
+          {!isLoading && (
+            <button
+              className="inline-flex w-full items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-emerald-500 via-indigo-500 to-purple-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+              onClick={() => {
+                signOut();
+              }}
+            >
+              Desconectar Wallet
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="labellegend">
+            <p className="text-white mb-4 uppercase font-bold">
+              Hola {name} 👋🏼
+            </p>
+            <p className="text-white italic text-sm mb-4">
+              Por favor conecta tu wallet en el botón de abajo para canjear tu
+              certificado
+            </p>
+          </div>
+          <button
+            type="submit"
+            className="inline-flex w-full items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-emerald-500 via-indigo-500 to-purple-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+            disabled={isLoading}
+            onClick={() => {
+              signIn();
+            }}
+          >
+            Conecta tu wallet 👻
+          </button>
+        </>
+      )}
+    </div>
+  );
 };
 
 export default WalletStep;
