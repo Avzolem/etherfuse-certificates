@@ -51,10 +51,10 @@ const WalletStep = () => {
     let file = null;
 
     try {
-      setStatusText("Por favor confirma la transacción en tu wallet 👻 ");
-      const explorerLink = await sendTransaction(price);
+      //   setStatusText("Por favor confirma la transacción en tu wallet 👻 ");
+      //   const explorerLink = await sendTransaction(price);
 
-      setStatusText("Transacción confirmada, generando el certificado 📃 ");
+      setStatusText("Generando el certificado 📃 ");
 
       const imgname = name.replace(/\s+/g, "%20");
 
@@ -82,7 +82,7 @@ const WalletStep = () => {
 
       const mintedData = {
         name,
-        explorerLink,
+        // explorerLink,
         imageUrl: uploadUrl,
         publicKey,
       };

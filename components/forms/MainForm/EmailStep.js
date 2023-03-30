@@ -40,8 +40,6 @@ const EmailStep = () => {
       if (isMinted) {
         toast.error("Ya tienes tu certificado emitido en tu wallet 🤬");
         setIsMinted(true);
-        //save isMinted in localstorage
-        localStorage.setItem("isMinted", true);
         return;
       }
 
