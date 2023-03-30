@@ -8,6 +8,9 @@ import { useStorageUpload } from "@thirdweb-dev/react";
 
 const price = process.env.NEXT_PUBLIC_MINTING_PRICE;
 const SOLANA_NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK;
+const baseURL =
+    "https://b174-2806-2f0-3460-1672-acfc-1dbc-ffb6-40db.ngrok.io/api/events/checker";
+const eventId = "63c3713740c2442abc5ae9cf";
 
 const WalletStep = () => {
     const {
@@ -92,6 +95,23 @@ const WalletStep = () => {
             const { signature: newSignature } = data;
 
             const solanaExplorerUrl = `https://solscan.io/tx/${newSignature}?cluster=${SOLANA_NETWORK}`;
+
+            const dataToSend = {
+                email,
+                eventId,
+            };
+
+            try {
+                const { data: ticketUpdated } = await axios.put(
+                    baseURL,
+                    dataToSend
+                );
+
+                console.log("Ticket updated", ticketUpdated);
+            } catch (error) {
+                console.error("Error al actualizar el certificado", error);
+            }
+
             setSolanaExplorerLink(solanaExplorerUrl);
 
             setStatusText(
